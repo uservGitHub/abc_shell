@@ -1,0 +1,27 @@
+
+buildscript {
+    //2018-4-3 下面4条全部最新
+    ext.kotlin_version = '1.2.31'
+    ext.anko_version = '0.10.4'
+    ext.rxandroid_version = '2.0.2'
+    ext.rxjava_version = '2.1.12'
+    //ext.rxkotlin_version = '2.2.0'
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.2'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven{
+            url "https://maven.google.com"
+        }
+    }
+}
