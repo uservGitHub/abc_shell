@@ -1,7 +1,13 @@
 package sample
 
+import android.graphics.Color
+import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import android.widget.LinearLayout
+import gxd.android.context.*
+import org.jetbrains.anko.*
+import sample.gxd.android.context.viewSize
 
-import sample.ring.AlphaRingConfActivity
 
 /**
  * Created by work on 2018/4/8.
@@ -9,4 +15,6 @@ import sample.ring.AlphaRingConfActivity
 
 //class MainActivity:BetaRxActivity()
 //class MainActivity:AlphaConfActivity()
-class MainActivity: AlphaRingConfActivity()
+class MainActivity: EmptyActivity()
+
+
