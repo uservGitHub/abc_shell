@@ -9,12 +9,14 @@ import android.support.v7.app.AppCompatActivity
 import android.text.method.ScrollingMovementMethod
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import gxd.android.context.fullScreen
 import gxd.android.context.notitle
 import gxd.android.context.screenSize
 import gxd.utils.LogBuilder
+import gxd.utils.RingModel
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk25.coroutines.onCheckedChange
 import org.jetbrains.anko.sdk25.coroutines.onClick
@@ -70,12 +72,33 @@ open class EmptyActivity:AppCompatActivity() {
 
     protected lateinit var winFrame: LinearLayout
     protected lateinit var toolHidePanel:LinearLayout
+    protected lateinit var subToolRingPanel:LinearLayout
     private lateinit var tbDump: TextView
 
     protected val log = LogBuilder("_A").apply {
         switch(true, false, true)
         reset(hostName)
     }
+    private fun ringSetupList() = listOf(
+            RingModel.FONTCOLOR_RINGVALUE.apply {
+                bindUi(ctx)
+                ringTag = "Color"
+                setOnShowText { it.second }
+            },
+            RingModel.FONTFACE_RINGVALUE.apply {
+                bindUi(ctx)
+                ringTag = "Font"
+                setOnShowText {
+                    val text = it.toString()
+                    val dotIndex = text.indexOfLast { ch -> ch == '.' }
+                    return@setOnShowText text.substring(dotIndex + 1)
+                }
+            },
+            RingModel.FONTSIZE_RINGVALUE.apply {
+                bindUi(ctx)
+                ringTag = "Size"
+            })
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         manual("preOnCreate")
@@ -124,13 +147,20 @@ open class EmptyActivity:AppCompatActivity() {
                     }
                     //endregion
                 }
+                //环行变量
+                horizontalScrollView{
+                    subToolRingPanel = linearLayout {
+                        backgroundColor = Color.GREEN
+                        orientation = LinearLayout.HORIZONTAL
+                    }
+                }.lparams(matchParent, wrapContent)
                 //dump信息
                 tbDump = textView() {
                     textSize = 22F
                     gravity = Gravity.LEFT
                     typeface = Typeface.MONOSPACE
                     movementMethod = ScrollingMovementMethod.getInstance()
-                }.lparams(matchParent, matchParent)
+                }.lparams(matchParent, 0, 1F)
 
             }.lparams(width= matchParent)
             textView(){
@@ -138,6 +168,13 @@ open class EmptyActivity:AppCompatActivity() {
                 gravity = Gravity.CENTER
                 backgroundColor = Color.YELLOW
             }.lparams(width= matchParent,height = dip(50))
+        }
+
+        ringSetupList().forEach {
+            subToolRingPanel.addView(it.renderView?.apply {
+                layoutParams = ViewGroup.LayoutParams(dip(100),dip(30))
+                setPadding(dip(10),0,dip(10),0)
+            })
         }
     }
 

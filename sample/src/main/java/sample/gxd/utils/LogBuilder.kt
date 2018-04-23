@@ -150,7 +150,7 @@ open class LogBuilder(val tag:String) {
     }
 
     fun manual(host:String, msg:Any){
-        val flowComplete = ">>${textTick()}$msg:${host}\n\n"
+        val flowComplete = ">>${textTick()}$msg:${host}\n"
         sb.append(flowComplete)
         excuteEnd()
         if (isLogv) {
