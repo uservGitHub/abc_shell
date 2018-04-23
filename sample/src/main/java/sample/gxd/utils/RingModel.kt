@@ -93,7 +93,7 @@ class RingModel<T>(private val list:List<T>) {
 
         override fun onDraw(canvas: Canvas) {
             //背景是透明的
-            val text = "$ringTag:${makeText()}"
+            val text = "$ringTag: ${makeText()}"
             drawDefaultText(canvas, text)
         }
 
