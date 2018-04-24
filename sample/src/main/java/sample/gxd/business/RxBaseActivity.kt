@@ -14,14 +14,16 @@ import gxd.utils.toRingModel
 abstract class RxBaseActivity:AppCompatActivity(){
 
     protected val ringSourceCount = 5.rangeTo(14).step(3).toRingModel()
-    protected val ringTBreak = 50L.rangeTo(250L).step(40L).toRingModel()
+    //0表示无效，不中断
+    protected val ringTBreak = 0L.rangeTo(250L).step(40L).toRingModel()
     //region    xxx1,xxx2
     protected val ringT1 = listOf(100L,150L,200L).toRingModel()
     protected val ringT2 = listOf(100L,150L,200L).toRingModel()
+    //none 表示无效，不使用
     protected val ringMap1 = MapType.values().toList().toRingModel()
     protected val ringMap2 = MapType.values().toList().toRingModel()
-    protected val ringThreadCount1 = 1.rangeTo(5).toRingModel()
-    protected val ringThreadCount2 = 1.rangeTo(5).toRingModel()
+    protected val ringThreadCount1 = 2.rangeTo(5).toRingModel()
+    protected val ringThreadCount2 = 2.rangeTo(5).toRingModel()
     protected val ringThreadType1 = ThreadType.values().toList().toRingModel()
     protected val ringThreadType2 = ThreadType.values().toList().toRingModel()
     //endregion
@@ -40,7 +42,7 @@ abstract class RxBaseActivity:AppCompatActivity(){
     abstract fun businessSetup()
 
     enum class ThreadType{
-        io,cpu,cache,main,single,fixed,schedule
+        io,cpu,main,single,cache,fixed,schedule
     }
     enum class MapType{
         flatMap,map,none
