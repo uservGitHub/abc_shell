@@ -1,11 +1,14 @@
 package gxd.android.context
 
+import android.app.Activity
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.util.DisplayMetrics
-
+import android.widget.LinearLayout
+import gxd.utils.RingModel
+import org.jetbrains.anko.*
 
 
 /**
@@ -41,3 +44,13 @@ inline val AppCompatActivity.statusBarHeight:Int
         val id = resources.getIdentifier("status_bar_height", "dimen", "android")
         return if (id > 0) resources.getDimensionPixelSize(id) else -1
     }
+
+inline fun<T> Activity.dragPanel(vararg rings:RingModel<T>) = horizontalScrollView {
+    linearLayout {
+        orientation = LinearLayout.HORIZONTAL
+        rings.forEach { ring ->
+            button("${ring.value!!}")
+            //ring.bindUi(context).lparams(width = dip(210), height = dip(40))
+        }
+    }
+}

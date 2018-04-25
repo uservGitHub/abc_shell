@@ -71,30 +71,38 @@ class RingModel<T>(private val list:List<T>) {
     }
 
     var ringTag: String = ""
+    var width:Int? = null
+    var heigth:Int? = null
 
     private inline fun makeText() =
             if (value == null) "null"
             else showText?.invoke(value!!) ?: value.toString()
 
     inner class InnerView(ctx: Context) : View(ctx) {
-        private val gestureManager: HalfSplitGestureManager
-
+        private val gestureManager: HalfSplitGestureManager<T>
+        internal var isDown = false
+            set(value) {
+                if (field != value){
+                    field = value
+                    invalidate()
+                }
+            }
+        fun leftClick(){
+            this@RingModel.dec()
+            invalidate()
+        }
+        fun rightClick(){
+            this@RingModel.inc()
+            invalidate()
+        }
         init {
-            gestureManager = HalfSplitGestureManager(this,
-                    {
-                        this@RingModel.dec()
-                        invalidate()
-                    },
-                    {
-                        this@RingModel.inc()
-                        invalidate()
-                    })
+            gestureManager = HalfSplitGestureManager(this)
         }
 
         override fun onDraw(canvas: Canvas) {
             //背景是透明的
-            val text = "$ringTag: ${makeText()}"
-            drawDefaultText(canvas, text)
+            val text = "$ringTag:  ${makeText()}"
+            drawDefaultText(canvas, text, isDown)
         }
 
         /*private val backgroundRect: Rect
@@ -119,10 +127,18 @@ class RingModel<T>(private val list:List<T>) {
         private val TEXT_PAINT_BOLD:Paint
             get() = textPaint(FONT_COLOR, FONT_SIZE, FONT_FACE).apply { isFakeBoldText = true }
 
-        fun View.drawDefaultText(canvas: Canvas, text: String, isLock: Boolean = false, isBold: Boolean = true) {
-            val rect = Rect(paddingLeft, paddingTop, width - paddingRight, height - paddingBottom)
-            canvas.drawRect(rect, Paint().apply { color = if (isLock) Color.LTGRAY else Color.YELLOW })
+        fun View.drawDefaultText(canvas: Canvas, text: String, isDown:Boolean, isLock: Boolean = false, isBold: Boolean = true) {
+            val dx = if (isDown) 4 else 0
+            val rect = Rect(paddingLeft + dx, paddingTop + dx, width - paddingRight - dx, height - paddingBottom - dx)
 
+            canvas.drawRect(rect, Paint().apply { color = if (isLock) Color.LTGRAY else Color.LTGRAY })
+            /*if (isDown){
+                canvas.drawRect(rect, Paint().apply {
+                    color = Color.BLACK
+                    style = Paint.Style.STROKE
+                    strokeWidth = 4F
+                })
+            }*/
             if (text.isNotEmpty()) {
                 textDrawCenter(canvas,
                         if (isBold) TEXT_PAINT_BOLD else TEXT_PAINT_BOLD,

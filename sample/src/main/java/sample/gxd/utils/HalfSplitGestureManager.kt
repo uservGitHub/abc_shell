@@ -14,7 +14,7 @@ import org.jetbrains.anko.AnkoLogger
  * 二分手势管理
  */
 
-class HalfSplitGestureManager(val view: View, val leftClick:()->Unit, val rightClick:()->Unit):
+class HalfSplitGestureManager<T>(val view: RingModel<T>.InnerView):
         View.OnTouchListener,
         GestureDetector.OnGestureListener,
         GestureDetector.OnDoubleTapListener,
@@ -38,9 +38,9 @@ class HalfSplitGestureManager(val view: View, val leftClick:()->Unit, val rightC
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
         //info { "(${e.x},${e.y},${driver.view.width})" }
         if (e.x<view.width/2){
-            leftClick()
+            view.leftClick()
         }else{
-            rightClick()
+            view.rightClick()
         }
         return true
     }
@@ -56,11 +56,13 @@ class HalfSplitGestureManager(val view: View, val leftClick:()->Unit, val rightC
         if (event.action == MotionEvent.ACTION_UP) {
             //结束
             //info { "End" }
+            view.isDown = false
         }
         return retVal
     }
     override fun onDown(e: MotionEvent): Boolean {
         //info { "Beg" }
+        view.isDown = true
         return true
     }
 
