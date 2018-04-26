@@ -1,10 +1,14 @@
 package gxd.business
 
+import android.graphics.Typeface
 import android.os.Bundle
 import android.widget.HorizontalScrollView
 import android.support.v7.app.AppCompatActivity
+import android.text.method.ScrollingMovementMethod
+import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.TextView
 import gxd.android.context.dragPanel
 import gxd.android.context.fullScreen
 import gxd.android.context.notitle
@@ -12,6 +16,8 @@ import gxd.utils.LogBuilder
 import gxd.utils.RingModel
 import gxd.utils.toRingModel
 import org.jetbrains.anko.*
+import org.jetbrains.anko.sdk25.coroutines.onCheckedChange
+import org.jetbrains.anko.sdk25.coroutines.onClick
 import sample.gxd.utils.BandingConfigure
 import sample.gxd.utils.toBandingPanel
 
@@ -35,30 +41,96 @@ abstract class RxBaseActivity:AppCompatActivity(){
     protected val ringThreadType1 = ThreadType.values().toList().toRingModel().apply { ringTag = "线程类型1" }
     protected val ringThreadType2 = ThreadType.values().toList().toRingModel().apply { ringTag = "线程类型2" }
     //endregion
-    //private lateinit var dragPanel1:LinearLayout
-    //private lateinit var dragPanel2:LinearLayout
+
+    private lateinit var tbDump:TextView
+
     protected val log = LogBuilder("_Rx")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         notitle()
         super.onCreate(savedInstanceState)
-        val items1 = listOf(ringT1,ringMap1,ringThreadCount1,ringThreadType1,ringSourceCount)
+        val items1 = listOf(ringT1,ringMap1,ringThreadCount1,ringThreadType1)
         val items2 = listOf(ringT2,ringMap2,ringThreadCount2,ringThreadType2)
         val bandSet = BandingConfigure()
         verticalLayout {
+            horizontalScrollView{
+                setPadding(dip(5),dip(5),dip(5),dip(7))
+                //region    总体设置
+                linearLayout {
+                    orientation = LinearLayout.HORIZONTAL
+                    button("Clr") {
+                        onClick { clearDump() }
+                    }
+                    checkBox("Flow") {
+                        onCheckedChange { buttonView, isChecked ->
+                            isFlow = isChecked
+                        }
+                    }
+                    checkBox("Pill") {
+                        onCheckedChange { buttonView, isChecked ->
+                            isPill = isChecked
+                        }
+                    }
+                    checkBox("Log") {
+                        onCheckedChange { buttonView, isChecked ->
+                            isLogv = isChecked
+                        }
+                    }
+
+
+                }
+                //endregion
+            }
 
             addView(items1.toBandingPanel(ctx,bandSet).apply {
-                //lparams()
-                setPadding(0,dip(3),0,dip(2))
+                setPadding(dip(5),0,dip(5),dip(2.5F))
             })
             addView(items2.toBandingPanel(ctx,bandSet).apply {
-                //lparams()
-                setPadding(0,dip(2),0,dip(3))
+                setPadding(dip(5),dip(2.5F),dip(5),dip(5))
             })
+
+            linearLayout {
+                setPadding(dip(5),dip(7),dip(5),dip(5))
+                orientation = LinearLayout.VERTICAL
+                tbDump = textView() {
+                    textSize = 22F
+                    gravity = Gravity.LEFT
+                    typeface = Typeface.MONOSPACE
+                    movementMethod = ScrollingMovementMethod.getInstance()
+                }.lparams(matchParent, matchParent)
+            }.lparams(matchParent, 0, 1F)
         }
 
     }
 
+    //region    控制属性
+    protected var isLogv = false
+        private set
+    protected var isFlow = false
+        private set
+    protected var isPill = false
+        private set
+    //endregion
+
+    //region    公共方法
+    fun updateDump(text: String) {
+        tbDump.text = text
+    }
+
+    fun appendUiDump(text: String){
+        runOnUiThread {
+            tbDump.append(text)
+        }
+    }
+
+    fun appendDump(text: String) {
+        tbDump.append(text)
+    }
+
+    fun clearDump() {
+        tbDump.text = ""
+    }
+    //endregion
     override fun onResume() {
         super.onResume()
         fullScreen()
