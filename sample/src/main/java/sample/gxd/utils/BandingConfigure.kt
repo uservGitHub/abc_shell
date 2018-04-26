@@ -16,7 +16,7 @@ import org.jetbrains.anko.dip
 
 data class BandingConfigure(
     var isHor:Boolean = true,
-    var itemDefOffset:Int = 12,
+    var itemDefOffset:Int = 12, //outerOffset
     var itemDefWidth:Int = 220,
     var itemDefHeight:Int = 38) {
 }
@@ -36,14 +36,42 @@ private inline fun buildHorBandingPanel(items:List<RingModel<out Any>>, ctx: Con
             }
             it.addView(container)
             val halfOffset = (configure.itemDefOffset / 2).toInt()
-            items.forEach { item ->
+            val count = items.count()
+            if (count == 1) {
+                val item = items[0]
                 container.addView(item.bindUi(ctx).apply {
                     layoutParams = ViewGroup.LayoutParams(
-                            dip(halfOffset + (item.width ?: configure.itemDefWidth)),
-                            dip(item.heigth ?: configure.itemDefHeight))
+                            dip(item.width ?: configure.itemDefWidth),
+                            dip(configure.itemDefHeight))
 
-                    setPadding(dip(halfOffset), 0, dip(halfOffset), 0)
+                    setPadding(0, 0, 0, 0)
                 })
+            } else if (count > 1) {
+                for (i in 0..count - 1) {
+                    val item = items[i]
+                    container.addView(item.bindUi(ctx).apply {
+                        when {
+                            i == 0 -> {
+                                layoutParams = ViewGroup.LayoutParams(
+                                        dip(halfOffset + (item.width ?: configure.itemDefWidth)),
+                                        dip(configure.itemDefHeight))
+                                setPadding(0, 0, dip(halfOffset), 0)
+                            }
+                            i == count - 1 -> {
+                                layoutParams = ViewGroup.LayoutParams(
+                                        dip(halfOffset + (item.width ?: configure.itemDefWidth)),
+                                        dip(configure.itemDefHeight))
+                                setPadding(dip(halfOffset), 0, 0, 0)
+                            }
+                            else -> {
+                                layoutParams = ViewGroup.LayoutParams(
+                                        dip(2 * halfOffset + (item.width ?: configure.itemDefWidth)),
+                                        dip(configure.itemDefHeight))
+                                setPadding(dip(halfOffset), 0, dip(halfOffset), 0)
+                            }
+                        }
+                    })
+                }
             }
         }
 
@@ -54,14 +82,42 @@ private inline fun buildVerBandingPanel(items:List<RingModel<out Any>>, ctx: Con
             }
             it.addView(container)
             val halfOffset = (configure.itemDefOffset / 2).toInt()
-            items.forEach { item ->
+            val count = items.count()
+            if (count == 1) {
+                val item = items[0]
                 container.addView(item.bindUi(ctx).apply {
                     layoutParams = ViewGroup.LayoutParams(
-                            dip(halfOffset + (item.width ?: configure.itemDefWidth)),
+                            dip(configure.itemDefWidth),
                             dip(item.heigth ?: configure.itemDefHeight))
 
-                    setPadding(dip(halfOffset), 0, dip(halfOffset), 0)
+                    setPadding(0, 0, 0, 0)
                 })
+            } else if (count > 1) {
+                for (i in 0..count - 1) {
+                    val item = items[i]
+                    container.addView(item.bindUi(ctx).apply {
+                        when {
+                            i == 0 -> {
+                                layoutParams = ViewGroup.LayoutParams(
+                                        dip(configure.itemDefWidth),
+                                        dip(halfOffset + (item.heigth ?: configure.itemDefHeight)))
+                                setPadding(0, 0, 0, dip(halfOffset))
+                            }
+                            i == count - 1 -> {
+                                layoutParams = ViewGroup.LayoutParams(
+                                        dip(configure.itemDefWidth),
+                                        dip(halfOffset + (item.heigth ?: configure.itemDefHeight)))
+                                setPadding(0, dip(halfOffset), 0, 0)
+                            }
+                            else -> {
+                                layoutParams = ViewGroup.LayoutParams(
+                                        dip(configure.itemDefWidth),
+                                        dip(2 * halfOffset + (item.heigth ?: configure.itemDefHeight)))
+                                setPadding(0, dip(halfOffset), dip(halfOffset), 0)
+                            }
+                        }
+                    })
+                }
             }
         }
 
