@@ -1,5 +1,6 @@
 package sample.gxd.business
 
+import android.util.Log
 import gxd.business.RxBaseActivity
 import java.util.*
 import io.reactivex.Observable
@@ -24,7 +25,7 @@ open class RxActivity:RxBaseActivity() {
     }
     //更新开关，从UI设置中更新
     private val updateSwitch:()->Unit = {
-        //log.switch(isFlow, isLogv, isPill)
+        log.switch(isFlow, isLogv, isPill)
     }
     //自定义调度器
     private var customScheduler1: ExecutorService? = null
@@ -33,48 +34,77 @@ open class RxActivity:RxBaseActivity() {
     private var clearSchedulerHook1:(()->Unit)? = null
     private var clearSchedulerHook2:(()->Unit)? = null
 
-    override fun businessSetup() {
+    override fun mapToMap() {
         customScheduler1 = null
         customScheduler2 = null
         clearSchedulerHook1 = null
         clearSchedulerHook2 = null
 
         //事件产生、事件加工、事件消费
-        val source = createSource().apply {
-            //region    subscribeOn(必须有)
-            this.subscribeOn(ringThreadType1.value!!.toScheduler1())
-            //endregion
-        }.apply {
-            //region    ringMap1(none表示无效)
-            when (ringMap1.value!!) {
-                MapType.none -> {
-                }   //不做处理
-                MapType.map -> map1()
-                MapType.flatMap -> flatMap1()
-            }
-            //endregion
-        }.apply {
-            //region    observeOn(必须有)
-            this.observeOn(ringThreadType2.value!!.toScheduler2())
-            //endregion
-        }.apply {
-            //region    ringMap2(none表示无效)
-            when (ringMap2.value!!) {
-                MapType.none -> {
-                }   //不做处理
-                MapType.map -> map2()
-                MapType.flatMap -> flatMap2()
-            }
-            //endregion
-        }.apply {
-            //region    doOnDispose(中断时间大于0才有效)
-            if (ringTBreak.value!! > 0) {
-                doOnDispose(log::postBreak)
-            }
-            //endregion
-        }
-
         val title = "${ringThreadType1.value}_${ringMap1.value}_${ringThreadType2.value}_${ringMap2.value}_${ringTBreak.value}"
+
+        val source = createSource()
+                .apply {
+                    subscribeOn(ringThreadType1.value!!.toScheduler1())
+                }
+                //.subscribeOn(ringThreadType1.value!!.toScheduler1())
+                .map {
+                    log.pillingThread("T1")
+                    trySleep(ringT1.value!!)
+                    "T1:$it"
+                }
+                .observeOn(ringThreadType2.value!!.toScheduler2())
+                .map {
+                    log.pillingThread("T2")
+                    trySleep(ringT2.value!!)
+                    "T2:$it"
+                }
+        updateSwitch.invoke()
+        log.reset(title){
+            clearSchedulerHook1?.invoke()
+            clearSchedulerHook2?.invoke()
+        }
+        source.subscribe(log::preNext,log::preError,log::postComplete,log::preSubscribe)
+        //region    doBrak(中断时间大于0才有效)
+        if (ringTBreak.value!! > 0){
+            doBreak()
+        }
+        //endregion
+    }
+
+    override fun flatmapToFlatmap() {
+        customScheduler1 = null
+        customScheduler2 = null
+        clearSchedulerHook1 = null
+        clearSchedulerHook2 = null
+
+        //事件产生、事件加工、事件消费
+        val title = "${ringThreadType1.value}_${ringMap1.value}_${ringThreadType2.value}_${ringMap2.value}_${ringTBreak.value}"
+
+        /*val source = createSource()
+                .flatMap1()
+                .subscribeOn(ringThreadType1.value!!.toScheduler1())
+                .observeOn(ringThreadType2.value!!.toScheduler2())
+                .flatMap2()
+                .doOnDispose(log::postBreak)*/
+        val source = createSource()
+                .flatMap { v->
+                    Observable.just(v).map {
+                        log.pillingThread("T1")
+                        trySleep(ringT1.value!!)
+                        "T1:$v"
+                    }
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .flatMap { v->
+                    Observable.just(v).map {
+                        log.pillingThread("T2")
+                        trySleep(ringT2.value!!)
+                        "T2:$v"
+                    }
+                }
+                .doOnDispose(log::postBreak)
 
         updateSwitch.invoke()
         log.reset(title){
@@ -84,6 +114,101 @@ open class RxActivity:RxBaseActivity() {
         source.subscribe(log::preNext,log::preError,log::postComplete,log::preSubscribe)
         //region    doBrak(中断时间大于0才有效)
         if (ringTBreak.value!! > 0){
+            doBreak()
+        }
+        //endregion
+    }
+
+    override fun businessSetup() {
+        //clearDump()   可以对比
+        excuteBusiness()
+    }
+
+    private inline fun excuteBusiness(){
+        customScheduler1 = null
+        customScheduler2 = null
+        clearSchedulerHook1 = null
+        clearSchedulerHook2 = null
+
+        //事件产生、事件加工、事件消费
+        /**
+         * .subscribeOn 不能放apply中
+         * .observeOn 不能放apply中
+         * .doOnDispose 被动操作，等待被触发
+         */
+        val source = when{
+            ringMap1.value!! == MapType.map && ringMap2.value!! == MapType.map ->{
+                createSource()
+                        .subscribeOn(ringThreadType1.value!!.toScheduler1())
+                        .doOnDispose(log::postBreak)
+                        .map1()
+                        .observeOn(ringThreadType2.value!!.toScheduler2())
+                        .map2()
+            }
+            ringMap1.value!! == MapType.flatMap && ringMap2.value!! == MapType.flatMap ->{
+                createSource()
+                        .subscribeOn(ringThreadType1.value!!.toScheduler1())
+                        .doOnDispose(log::postBreak)
+                        .flatMap1()
+                        .observeOn(ringThreadType2.value!!.toScheduler2())
+                        .flatMap2()
+            }
+            ringMap1.value!! == MapType.map && ringMap2.value!! == MapType.flatMap ->{
+                createSource()
+                        .subscribeOn(ringThreadType1.value!!.toScheduler1())
+                        .doOnDispose(log::postBreak)
+                        .map1()
+                        .observeOn(ringThreadType2.value!!.toScheduler2())
+                        .flatMap2()
+            }
+            ringMap1.value!! == MapType.flatMap && ringMap2.value!! == MapType.map ->{
+                createSource()
+                        .subscribeOn(ringThreadType1.value!!.toScheduler1())
+                        .doOnDispose(log::postBreak)
+                        .flatMap1()
+                        .observeOn(ringThreadType2.value!!.toScheduler2())
+                        .map2()
+            }
+            ringMap1.value!! == MapType.none && ringMap2.value!! == MapType.map ->{
+                createSource()
+                        .doOnDispose(log::postBreak)
+                        .observeOn(ringThreadType2.value!!.toScheduler2())
+                        .map2()
+            }
+            ringMap1.value!! == MapType.none && ringMap2.value!! == MapType.flatMap ->{
+                createSource()
+                        .doOnDispose(log::postBreak)
+                        .observeOn(ringThreadType2.value!!.toScheduler2())
+                        .flatMap2()
+            }
+            ringMap2.value!! == MapType.none && ringMap1.value!! == MapType.map ->{
+                createSource()
+                        .subscribeOn(ringThreadType1.value!!.toScheduler1())
+                        .doOnDispose(log::postBreak)
+                        .map1()
+            }
+            ringMap2.value!! == MapType.none && ringMap1.value!! == MapType.flatMap ->{
+                createSource()
+                        .flatMap1()
+                        .subscribeOn(ringThreadType1.value!!.toScheduler1())
+                        .doOnDispose(log::postBreak)
+
+            }
+            else ->{
+                createSource().doOnDispose(log::postBreak)
+            }
+        }
+
+        val title = "${ringThreadType1.value}_${ringMap1.value}_${ringThreadType2.value}_${ringMap2.value}_${ringTBreak.value}"
+
+        updateSwitch.invoke()
+        log.reset(title) {
+            clearSchedulerHook1?.invoke()
+            clearSchedulerHook2?.invoke()
+        }
+        source.subscribe(log::preNext, log::preError, log::postComplete, log::preSubscribe)
+        //region    doBrak(中断时间大于0才有效)
+        if (ringTBreak.value!! > 0) {
             doBreak()
         }
         //endregion

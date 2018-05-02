@@ -6,6 +6,7 @@ import android.widget.HorizontalScrollView
 import android.support.v7.app.AppCompatActivity
 import android.text.method.ScrollingMovementMethod
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -14,6 +15,7 @@ import gxd.android.context.fullScreen
 import gxd.android.context.notitle
 import gxd.utils.LogBuilder
 import gxd.utils.RingModel
+import gxd.utils.WrapItem
 import gxd.utils.toRingModel
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk25.coroutines.onCheckedChange
@@ -42,9 +44,18 @@ abstract class RxBaseActivity:AppCompatActivity(){
     protected val ringThreadType2 = ThreadType.values().toList().toRingModel().apply { ringTag = "线程类型2" }
     //endregion
 
+    private val commandList = mutableListOf<WrapItem<View>>()
     private lateinit var tbDump:TextView
 
-    protected val log = LogBuilder("_Rx")
+    protected val log = LogBuilder("_Rx").apply {
+        //通用操作
+        busEnd = {
+            //增量方式输出日志
+            appendUiDump(dump)
+            //释放UI锁定
+            releaseCommandList()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         notitle()
@@ -56,10 +67,15 @@ abstract class RxBaseActivity:AppCompatActivity(){
             horizontalScrollView{
                 setPadding(dip(5),dip(5),dip(5),dip(7))
                 //region    总体设置
-                linearLayout {
+                val commandPanel = linearLayout {
                     orientation = LinearLayout.HORIZONTAL
                     button("Clr") {
-                        onClick { clearDump() }
+                        commandList.add(WrapItem(this))
+                        onClick {
+                            enterCommandList.invoke(this@button)
+                            clearDump()
+                            releaseCommandList.invoke()
+                        }
                     }
                     checkBox("Flow") {
                         onCheckedChange { buttonView, isChecked ->
@@ -76,10 +92,43 @@ abstract class RxBaseActivity:AppCompatActivity(){
                             isLogv = isChecked
                         }
                     }
-
-
+                    button("Command"){
+                        commandList.add(WrapItem(this))
+                        onClick {
+                            enterCommandList.invoke(this@button)
+                            businessSetup()
+                        }
+                    }
+                    button("MapToMap"){
+                        commandList.add(WrapItem(this))
+                        onClick {
+                            enterCommandList.invoke(this@button)
+                            mapToMap()
+                        }
+                    }
+                    button("FMapToFMap"){
+                        commandList.add(WrapItem(this))
+                        onClick {
+                            enterCommandList.invoke(this@button)
+                            flatmapToFlatmap()
+                        }
+                    }
                 }
                 //endregion
+                ringSourceCount.bindUi(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                            dip(220),
+                            dip(38))
+                    setPadding(dip(12),0,dip(12),0)
+                    commandPanel.addView(this)
+                }
+                ringTBreak.bindUi(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                            dip(220),
+                            dip(38))
+                    setPadding(dip(12),0,dip(12),0)
+                    commandPanel.addView(this)
+                }
             }
 
             addView(items1.toBandingPanel(ctx,bandSet).apply {
@@ -102,6 +151,28 @@ abstract class RxBaseActivity:AppCompatActivity(){
         }
 
     }
+
+    //region    排他命令（全部锁定，运行完毕释放；标记：“。”）
+    //锁定
+    protected val enterCommandList: (View) -> Unit = { v ->
+        commandList.forEach {
+            it.t.isEnabled = false
+            if (it.t is TextView && it.t.text.last() == '。'){
+                val size = it.t.text.length
+                it.t.text = it.t.text.substring(0,size-1)
+            }
+        }
+        if (v is TextView){
+            v.text = "${v.text}。"
+        }
+    }
+    //释放
+    protected val releaseCommandList: () -> Unit = {
+        runOnUiThread {
+            commandList.forEach { it.t.isEnabled = true }
+        }
+    }
+    //endregion
 
     //region    控制属性
     protected var isLogv = false
@@ -131,12 +202,15 @@ abstract class RxBaseActivity:AppCompatActivity(){
         tbDump.text = ""
     }
     //endregion
+
     override fun onResume() {
         super.onResume()
         fullScreen()
     }
 
     abstract fun businessSetup()
+    abstract fun mapToMap()
+    abstract fun flatmapToFlatmap()
 
     enum class ThreadType{
         io,cpu,main,single,cache,fixed,schedule
