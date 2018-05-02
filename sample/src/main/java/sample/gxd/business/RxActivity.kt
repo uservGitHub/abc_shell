@@ -44,10 +44,7 @@ open class RxActivity:RxBaseActivity() {
         val title = "${ringThreadType1.value}_${ringMap1.value}_${ringThreadType2.value}_${ringMap2.value}_${ringTBreak.value}"
 
         val source = createSource()
-                .apply {
-                    subscribeOn(ringThreadType1.value!!.toScheduler1())
-                }
-                //.subscribeOn(ringThreadType1.value!!.toScheduler1())
+                .subscribeOn(ringThreadType1.value!!.toScheduler1())
                 .map {
                     log.pillingThread("T1")
                     trySleep(ringT1.value!!)
@@ -59,6 +56,7 @@ open class RxActivity:RxBaseActivity() {
                     trySleep(ringT2.value!!)
                     "T2:$it"
                 }
+                .doOnDispose(log::postBreak)
         updateSwitch.invoke()
         log.reset(title){
             clearSchedulerHook1?.invoke()
@@ -88,21 +86,23 @@ open class RxActivity:RxBaseActivity() {
                 .flatMap2()
                 .doOnDispose(log::postBreak)*/
         val source = createSource()
-                .flatMap { v->
-                    Observable.just(v).map {
-                        log.pillingThread("T1")
-                        trySleep(ringT1.value!!)
-                        "T1:$v"
-                    }
+                .flatMap { v ->
+                    Observable.just(v)
+                            .map {
+                                log.pillingThread("T1")
+                                trySleep(ringT1.value!!)
+                                "T1:$v"
+                            }.subscribeOn(ringThreadType1.value!!.toScheduler1())
                 }
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
+
+                //.observeOn(Schedulers.io())
                 .flatMap { v->
-                    Observable.just(v).map {
+                    Observable.just(v)
+                            .map {
                         log.pillingThread("T2")
                         trySleep(ringT2.value!!)
                         "T2:$v"
-                    }
+                    }.subscribeOn(ringThreadType2.value!!.toScheduler2())
                 }
                 .doOnDispose(log::postBreak)
 
@@ -124,6 +124,9 @@ open class RxActivity:RxBaseActivity() {
         excuteBusiness()
     }
 
+    /**
+     * flatMap中无subscribeOn 则 = map
+     */
     private inline fun excuteBusiness(){
         customScheduler1 = null
         customScheduler2 = null
@@ -256,6 +259,7 @@ open class RxActivity:RxBaseActivity() {
                     customScheduler1 = this
                     clearSchedulerHook1 = {
                         customScheduler1?.shutdownNow()
+                        //log.pilling("(cs1.isShutdown=${customScheduler1!!.isShutdown})")
                     }
                 })
             }
@@ -264,6 +268,7 @@ open class RxActivity:RxBaseActivity() {
                     customScheduler1 = this
                     clearSchedulerHook1 = {
                         customScheduler1?.shutdownNow()
+                        //log.pilling("(cs1.isShutdown=${customScheduler1!!.isShutdown})")
                     }
                 })
             }
@@ -272,6 +277,7 @@ open class RxActivity:RxBaseActivity() {
                     customScheduler1 = this
                     clearSchedulerHook1 = {
                         customScheduler1?.shutdownNow()
+                        //log.pilling("(cs1.isShutdown=${customScheduler1!!.isShutdown})")
                     }
                 })
             }
@@ -290,6 +296,7 @@ open class RxActivity:RxBaseActivity() {
                     customScheduler2 = this
                     clearSchedulerHook2 = {
                         customScheduler2?.shutdownNow()
+                        //log.pilling("(cs2.isShutdown=${customScheduler2!!.isShutdown})")
                     }
                 })
             }
@@ -298,6 +305,7 @@ open class RxActivity:RxBaseActivity() {
                     customScheduler2 = this
                     clearSchedulerHook2 = {
                         customScheduler2?.shutdownNow()
+                        //log.pilling("(cs2.isShutdown=${customScheduler2!!.isShutdown})")
                     }
                 })
             }
@@ -306,6 +314,7 @@ open class RxActivity:RxBaseActivity() {
                     customScheduler2 = this
                     clearSchedulerHook2 = {
                         customScheduler2?.shutdownNow()
+                        //log.pilling("(cs2.isShutdown=${customScheduler2!!.isShutdown})")
                     }
                 })
             }
