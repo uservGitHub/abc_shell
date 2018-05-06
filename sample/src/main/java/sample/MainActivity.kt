@@ -1,5 +1,6 @@
 package sample
 
+import gxd.test.*
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
@@ -28,7 +29,8 @@ import sample.gxd.utils.toBandingPanel
 
 
 //class MainActivity:TestRingActivity()
-class MainActivity:RxActivity()
+//class MainActivity:RxActivity()
+class MainActivity:TestRxLogActivity()
 
 /*class MainActivity:EmptyActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
